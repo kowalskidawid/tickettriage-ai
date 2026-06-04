@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Klasyfikacja zgłoszeń</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --border: #334155;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --tech: #f472b6;
+            --support: #34d399;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+        .wrap { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+        h1 { font-size: 1.6rem; margin-bottom: .25rem; }
+        p.sub { color: var(--muted); margin-top: 0; }
+        form {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+        }
+        label { display: block; font-weight: 600; margin-bottom: .35rem; }
+        input[type=text], textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            padding: .65rem .8rem;
+            font-size: 1rem;
+            font-family: inherit;
+            margin-bottom: 1rem;
+        }
+        textarea { resize: vertical; min-height: 130px; }
+        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+        button {
+            background: var(--accent);
+            color: #04293f;
+            border: none;
+            border-radius: 8px;
+            padding: .7rem 1.4rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        button:hover { filter: brightness(1.08); }
+        .results { margin-top: 2rem; display: grid; gap: 1rem; }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.1rem 1.25rem;
+        }
+        .card h3 { margin: 0 0 .6rem; font-size: 1.1rem; }
+        .badge {
+            display: inline-block;
+            padding: .2rem .7rem;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: .9rem;
+        }
+        .badge.technical { background: rgba(244,114,182,.15); color: var(--tech); border: 1px solid var(--tech); }
+        .badge.support  { background: rgba(52,211,153,.15); color: var(--support); border: 1px solid var(--support); }
+        .scores { margin-top: .75rem; }
+        .bar-row { display: flex; align-items: center; gap: .6rem; margin-bottom: .35rem; font-size: .9rem; }
+        .bar-label { width: 110px; color: var(--muted); flex-shrink: 0; }
+        .bar-track { flex: 1; background: var(--bg); border-radius: 6px; height: 14px; overflow: hidden; }
+        .bar-fill { height: 100%; background: var(--accent); }
+        .bar-val { width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+        .na { color: var(--muted); font-style: italic; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>Klasyfikacja zgłoszeń</h1>
+    <p class="sub">Wpisz zgłoszenie i zobacz predykcję każdego modelu: <strong>technical</strong> lub <strong>support</strong>.</p>
+
+    <form method="post">
+        <label for="subject">Temat</label>
+        <input type="text" id="subject" name="subject" value="{{ subject }}" placeholder="np. Server is down">
+
+        <label for="body">Treść</label>
+        <textarea id="body" name="body" placeholder="Opisz problem...">{{ body }}</textarea>
+
+        <button type="submit">Klasyfikuj</button>
+    </form>
+
+    {% if results %}
+    <div class="results">
+        {% for r in results %}
+        <div class="card">
+            <h3>{{ r.name }}</h3>
+            {% if r.available %}
+                <span class="badge {{ r.prediction }}">{{ r.prediction }}</span>
+                {% if r.scores %}
+                <div class="scores">
+                    {% for label, val in r.scores.items() %}
+                    <div class="bar-row">
+                        <span class="bar-label">{{ label }}</span>
+                        {% if val is number and val >= 0 and val <= 1 %}
+                        <span class="bar-track"><span class="bar-fill" style="width: {{ (val * 100) | round(1) }}%"></span></span>
+                        {% else %}
+                        <span class="bar-track"></span>
+                        {% endif %}
+                        <span class="bar-val">{{ val }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% else %}
+                <span class="na">Model niedostępny – nie został jeszcze wytrenowany.</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>
